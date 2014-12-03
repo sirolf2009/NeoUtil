@@ -23,11 +23,11 @@ public class RestAPI {
 	public Nodes nodes;
 	public Relationship relationship;
 	public JSON json;
-	
+
 	public RestAPI(String uri) throws URISyntaxException {
 		this(new URI(uri));
 	}
-	
+
 	public RestAPI(URI uri) {
 		SERVER_ROOT_URI = uri;
 		nodes = new Nodes(this);
@@ -71,11 +71,11 @@ public class RestAPI {
 	}
 
 	public class Nodes {
-		
-		public RestAPI restUtil;
-		
-		public Nodes(RestAPI restUtil) {
-			this.restUtil = restUtil;
+
+		public RestAPI restAPI;
+
+		public Nodes(RestAPI restAPI) {
+			this.restAPI = restAPI;
 		}
 
 		public URI createNode() {
@@ -125,7 +125,7 @@ public class RestAPI {
 		}
 
 		public void setNodeProperties(URI node, String key, Object value) {
-			setNodeProperties(node, restUtil.json.toJsonNameValuePairCollection(key, value));
+			setNodeProperties(node, restAPI.json.toJsonNameValuePairCollection(key, value));
 		}
 
 		public void setNodeProperties(URI node, String jsonProperties) {
@@ -153,16 +153,16 @@ public class RestAPI {
 	}
 
 	public class Relationship {
-		
-		public RestAPI restUtil;
-		
-		public Relationship(RestAPI restUtil) {
-			this.restUtil = restUtil;
+
+		public RestAPI restAPI;
+
+		public Relationship(RestAPI restAPI) {
+			this.restAPI = restAPI;
 		}
 
 		public URI addRelationship(URI startNode, URI endNode, String relationshipType) {
 			String fromUri = extendNode(startNode, "relationships");
-			String relationshipJson = generateJsonRelationship(endNode, relationshipType);
+			String relationshipJson = restAPI.json.generateJsonRelationship(endNode, relationshipType);
 
 			WebResource resource = Client.create().resource(fromUri);
 			ClientResponse response = resource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON).entity(relationshipJson).post(ClientResponse.class);
@@ -176,7 +176,7 @@ public class RestAPI {
 
 		public URI addRelationshipWithProperties(URI startNode, URI endNode, String relationshipType, String jsonAttributes) {
 			String fromUri = extendNode(startNode, "relationships");
-			String relationshipJson = generateJsonRelationshipWithAttributes(endNode, relationshipType, jsonAttributes);
+			String relationshipJson = restAPI.json.generateJsonRelationshipWithAttributes(endNode, relationshipType, jsonAttributes);
 
 			WebResource resource = Client.create().resource(fromUri);
 			ClientResponse response = resource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON).entity(relationshipJson).post(ClientResponse.class);
@@ -197,32 +197,25 @@ public class RestAPI {
 			return location;
 		}
 
-		public String generateJsonRelationshipWithAttributes(URI endNode, String relationshipType, String jsonAttributes) {
-			return "{ \"to\" : \""+endNode.toString()+"\", \"type\" : \""+relationshipType+"\", \"data\" : "+jsonAttributes+" }";
-		}
-
-		public String generateJsonRelationship(URI endNode, String relationshipType) {
-			return "{ \"to\" : \""+endNode.toString()+"\", \"type\" : \""+relationshipType+"\" }";
+		public String getRelationshipProperties(URI relationshipURI) throws URISyntaxException {
+			URI propertyUri = new URI(extendNode(relationshipURI, "properties"));
+			WebResource resource = Client.create().resource(propertyUri);
+			ClientResponse response = resource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+			String entity = response.getEntity(String.class);
+			NeoUtil.log.debug(String.format("GET from [%s], status code [%d], entity [%s]", propertyUri, response.getStatus(), entity));
+			return entity;
 		}
 
 		public void setRelationshipProperties(URI relationshipUri, String name, Object value) throws URISyntaxException {
-			URI propertyUri = new URI(extendNode(relationshipUri, "properties"));
-			String entity = restUtil.json.toJsonNameValuePairCollection(name, value);
-			WebResource resource = Client.create().resource(propertyUri);
-			ClientResponse response = resource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON).entity(entity).put(ClientResponse.class);
-			NeoUtil.log.debug(String.format("PUT [%s] to [%s], status code [%d]", entity, propertyUri, response.getStatus()));
-			response.close();
+			String entity = restAPI.json.toJsonNameValuePairCollection(name, value);
+			setRelationshipProperties(relationshipUri, entity);
 		}
 
 		public void setRelationshipProperties(URI relationshipUri, Map<String, ?> properties) throws URISyntaxException {
-			URI propertyUri = new URI(extendNode(relationshipUri, "properties"));
-			String entity = restUtil.json.toJsonNameValuePairCollection(properties);
-			WebResource resource = Client.create().resource(propertyUri);
-			ClientResponse response = resource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON).entity(entity).put(ClientResponse.class);
-			NeoUtil.log.debug(String.format("PUT [%s] to [%s], status code [%d]", entity, propertyUri, response.getStatus()));
-			response.close();
+			String entity = restAPI.json.toJsonNameValuePairCollection(properties);
+			setRelationshipProperties(relationshipUri, entity);
 		}
-		
+
 		public void setRelationshipProperties(URI relationshipUri, String properties) throws URISyntaxException {
 			URI propertyUri = new URI(extendNode(relationshipUri, "properties"));
 			WebResource resource = Client.create().resource(propertyUri);
@@ -230,7 +223,7 @@ public class RestAPI {
 			NeoUtil.log.debug(String.format("PUT [%s] to [%s], status code [%d]", properties, propertyUri, response.getStatus()));
 			response.close();
 		}
-		
+
 		public String getRelationshipsRaw(URI node) throws URISyntaxException {
 			URI relationshipListURI =  new URI(extendNode(node, "relationships/all"));
 			WebResource resource = Client.create().resource(relationshipListURI);
@@ -240,7 +233,7 @@ public class RestAPI {
 			response.close();
 			return entity;
 		}
-		
+
 		public JSONArray getRelationships(URI node) throws URISyntaxException {
 			return (JSONArray) JSONValue.parse(getRelationshipsRaw(node));
 		}
@@ -248,11 +241,11 @@ public class RestAPI {
 	}
 
 	public class JSON {
-		
-		public RestAPI restUtil;
-		
-		public JSON(RestAPI restUtil) {
-			this.restUtil = restUtil;
+
+		public RestAPI restAPI;
+
+		public JSON(RestAPI restAPI) {
+			this.restAPI = restAPI;
 		}
 
 		public List<JSONArray> getRowsFromCypherQuery(JSONObject object) {
@@ -271,7 +264,7 @@ public class RestAPI {
 			}
 			return rowList;
 		}
-		
+
 		public List<JSONObject> getColumn(List<JSONArray> rows) {
 			System.out.println(rows);
 			return null;
@@ -298,6 +291,14 @@ public class RestAPI {
 			builder.delete(builder.length()-2, builder.length()-1);
 			builder.append("}");
 			return builder.toString();
+		}
+
+		public String generateJsonRelationshipWithAttributes(URI endNode, String relationshipType, String jsonAttributes) {
+			return "{ \"to\" : \""+endNode.toString()+"\", \"type\" : \""+relationshipType+"\", \"data\" : "+jsonAttributes+" }";
+		}
+
+		public String generateJsonRelationship(URI endNode, String relationshipType) {
+			return "{ \"to\" : \""+endNode.toString()+"\", \"type\" : \""+relationshipType+"\" }";
 		}
 
 	}
