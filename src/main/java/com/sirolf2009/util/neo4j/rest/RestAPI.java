@@ -36,12 +36,12 @@ public class RestAPI {
 	}
 
 	public String sendCypherRaw(String cypher) {
-		final String txUri = SERVER_ROOT_URI + "transaction/commit";
-		WebResource resource = Client.create().resource(txUri);
+		final String uri = extendNode(SERVER_ROOT_URI, "transaction/commit");
+		WebResource resource = Client.create().resource(uri);
 		String payload = "{\"statements\" : [ {\"statement\" : \"" +cypher + "\"} ]}";
 		ClientResponse response = resource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON).entity(payload).post(ClientResponse.class);
 		String result = response.getEntity(String.class);
-		NeoUtil.log.info(String.format("POST [%s] \n\tto [%s] \n\tstatus code [%d] \n\treturned data: \n%s", payload, txUri, response.getStatus(), result));
+		NeoUtil.log.info(String.format("POST [%s] \n\tto [%s] \n\tstatus code [%d] \n\treturned data: \n%s", payload, uri, response.getStatus(), result));
 		response.close();
 		return result;
 	}
@@ -120,6 +120,18 @@ public class RestAPI {
 			WebResource resource = Client.create().resource(propertyUri);
 			String entity = value instanceof String ? "\""+value+"\"" : value.toString();
 			ClientResponse response = resource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON).entity(entity).put(ClientResponse.class);
+			NeoUtil.log.debug(String.format("PUT to [%s], status code [%d]", propertyUri, response.getStatus()));
+			response.close();
+		}
+		
+		public void addPropertyToNode(URI node, String key, Object[] array) throws URISyntaxException {
+			String propertyUri = extendNode(node, "properties/"+key);
+			WebResource resource = Client.create().resource(propertyUri);
+			StringBuilder builder = new StringBuilder();
+			for(Object item : array) {
+				builder.append(item instanceof String ? "\""+item+"\"" : item.toString());
+			}//TODO wtf arrays?
+			ClientResponse response = resource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON).entity(builder.toString()).put(ClientResponse.class);
 			NeoUtil.log.debug(String.format("PUT to [%s], status code [%d]", propertyUri, response.getStatus()));
 			response.close();
 		}
@@ -248,6 +260,10 @@ public class RestAPI {
 			this.restAPI = restAPI;
 		}
 
+		@Deprecated
+		/**
+		 * Deprecated - Use getRowsFromQuery instead
+		 */
 		public List<JSONArray> getRowsFromCypherQuery(JSONObject object) {
 			List<JSONArray> rowList = new ArrayList<JSONArray>();
 			JSONArray results = (JSONArray) object.get("results");
@@ -299,6 +315,23 @@ public class RestAPI {
 
 		public String generateJsonRelationship(URI endNode, String relationshipType) {
 			return "{ \"to\" : \""+endNode.toString()+"\", \"type\" : \""+relationshipType+"\" }";
+		}
+		
+		/**
+		 * Get the results from {@link RestAPI.sendCypher}, neatly stacked in a list
+		 * @param response - The result from {@link RestAPI.sendCypher}
+		 * @return List<JSONArray> - A list of rows. The JSONArray's that the list contains are ordered in columns. So getting row 0 column 2 would be list.get(0).get(2)
+		 */
+		public List<JSONArray> getRowsFromQuery(JSONObject response) {
+			List<JSONArray> list = new ArrayList<JSONArray>();
+			JSONArray results = (JSONArray) response.get("results");
+			JSONObject firstData = (JSONObject) results.get(0);
+			JSONArray data = (JSONArray) firstData.get("data");
+			for(int i = 0; i < data.size(); i++) {
+				JSONObject rowData = (JSONObject) data.get(i);
+				list.add((JSONArray) rowData.get("row"));
+			}
+			return list;
 		}
 
 	}
