@@ -103,7 +103,7 @@ public class TestRestUtil {
 		assertArrayEquals("Using Cypher result as JSON", expectedJsonArray, rest.json.getRowsFromCypherQuery(object).toArray());
 		System.out.println();
 
-		System.out.println("Testing multple column cypher results");
+		System.out.println("Testing multiple column cypher results");
 		node3 = rest.nodes.createNode();
 		rest.nodes.addLabelToNode(node3, "JUNIT_TEST_NODE");
 		rest.nodes.addPropertyToNode(node3, "Third", "Node");
