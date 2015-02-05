@@ -16,4 +16,4 @@ This is an utility API for Neo4J. As of now, it merely consists of a RESTful API
 
 ## Java Doc
 
-[Javadoc at Jenkins](jenkins.sirolf2009.com/job/NeoUtil/javadoc/ "Javadoc at Jenkins")
+[Javadoc at Jenkins](http://jenkins.sirolf2009.com/job/NeoUtil/javadoc/ "Javadoc at Jenkins")
