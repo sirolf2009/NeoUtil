@@ -1,6 +1,6 @@
 # NeoUtil
 
-[![Build Status](http://104.223.1.238:8080/job/NeoUtil/badge/icon)](http://104.223.1.238:8080/job/NeoUtil/)
+[![Build Status](http://104.223.1.238:8080/buildStatus/icon?job=NeoUtil)](http://104.223.1.238:8080/job/NeoUtil/)
 
 This is an utility API for Neo4J. As of now, it merely consists of a RESTful API wrapper. 
 
