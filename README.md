@@ -1,8 +1,10 @@
 # NeoUtil
 
-This is an utility API for Neo4J
+[![Build Status](http://jenkins.sirolf2009.com/job/NeoUtil/badge/icon)](http://jenkins.sirolf2009.com/job/NeoUtil/)
 
-Maven dependency
+This is an utility API for Neo4J. As of now, it merely consists of a RESTful API wrapper. 
+
+## Maven dependency
 
 ```
 <dependency>
@@ -11,3 +13,7 @@ Maven dependency
   <version>0.0.1</version>
 </dependency>
 ```
+
+## Java Doc
+
+jenkins.sirolf2009.com/job/NeoUtil/javadoc/
